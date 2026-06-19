@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Breakout</title>
 <style>
   html, body {
@@ -13,19 +14,26 @@
     justify-content: center;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #e6edf3;
+    touch-action: none;
+    overscroll-behavior: none;
   }
-  #wrap { text-align: center; }
+  #wrap { text-align: center; width: 100%; max-width: 480px; padding: 0 10px; }
   canvas {
     background: #0c1018;
     border: 3px solid #2a3349;
     border-radius: 10px;
     box-shadow: 0 0 50px rgba(80,160,255,0.18), inset 0 0 60px rgba(0,0,0,0.5);
     display: block;
+    width: 100%;
+    height: auto;
+    max-width: 480px;
+    touch-action: none;
   }
   #hud {
     display: flex;
     justify-content: space-between;
-    width: 480px;
+    width: 100%;
+    max-width: 480px;
     margin: 0 auto 10px;
     font-size: 18px;
     font-weight: bold;
@@ -78,7 +86,7 @@
     <span id="muteBtn" style="cursor:pointer;">🔊</span>
   </div>
   <canvas id="game" width="480" height="560"></canvas>
-  <div id="hint">Maus bewegen oder ← → zum Steuern · Leertaste/Klick: Start/Pause</div>
+  <div id="hint">Maus/Finger bewegen oder ← → zum Steuern · Leertaste/Klick/Tippen: Start/Pause</div>
 </div>
 
 <div id="overlay">
@@ -103,7 +111,7 @@ const overlayBtn = document.getElementById('overlayBtn');
 const PADDLE_W = 90, PADDLE_H = 14, PADDLE_Y = H - 30;
 const BALL_R = 7;
 const BRICK_ROWS = 5, BRICK_COLS = 8;
-const BRICK_W = 52, BRICK_H = 24, BRICK_PAD = 8, BRICK_TOP = 50, BRICK_LEFT = (W - (BRICK_COLS * (BRICK_W + BRICK_PAD) - BRICK_PAD)) / 2;
+const BRICK_W = 44, BRICK_H = 44, BRICK_PAD = 8, BRICK_TOP = 45, BRICK_LEFT = (W - (BRICK_COLS * (BRICK_W + BRICK_PAD) - BRICK_PAD)) / 2;
 const GLAZE_COLORS = ['#ff6fa5', '#ff9f43', '#ffd76f', '#7ee787', '#6fb1ff'];
 const SPRINKLE_COLORS = ['#ffffff', '#ff5e7a', '#5ec8ff', '#ffe34d', '#7ee787'];
 
@@ -274,6 +282,29 @@ document.addEventListener('keyup', e => { keys[e.key] = false; });
 canvas.addEventListener('click', toggleRun);
 overlayBtn.addEventListener('click', toggleRun);
 
+// Touch-Steuerung (Mobil)
+function moveByClientX(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (clientX - rect.left) * (W / rect.width);
+  paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w / 2));
+}
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  moveByClientX(e.touches[0].clientX);
+  if (!running) toggleRun();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  moveByClientX(e.touches[0].clientX);
+}, { passive: false });
+
+overlayBtn.addEventListener('touchstart', e => {
+  e.preventDefault();
+  toggleRun();
+}, { passive: false });
+
 function toggleRun() {
   if (gameOver) {
     resetGame();
@@ -392,25 +423,25 @@ function draw() {
     ctx.fill();
   }
 
-  // Bricks als 3D-Donuts
+  // Bricks als 3D-Donuts (echte Kreise)
   for (const b of bricks) {
     if (!b.alive) continue;
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-    const rOuter = b.w / 2 - 1, rInner = rOuter * 0.38;
+    const rOuter = Math.min(b.w, b.h) / 2 - 1, rInner = rOuter * 0.4;
 
     ctx.save();
     ctx.translate(cx, cy);
 
     // Schlagschatten auf der Unterlage
     ctx.beginPath();
-    ctx.ellipse(2, 3, rOuter, rOuter * 0.62, 0, 0, Math.PI * 2);
+    ctx.arc(1.5, 2.5, rOuter, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fill();
 
     // Teig-Ring (3D-Gradient: hell oben, dunkel unten)
     ctx.beginPath();
-    ctx.ellipse(0, 0, rOuter, rOuter * 0.62, 0, 0, Math.PI * 2);
-    const doughGrad = ctx.createLinearGradient(0, -rOuter * 0.62, 0, rOuter * 0.62);
+    ctx.arc(0, 0, rOuter, 0, Math.PI * 2);
+    const doughGrad = ctx.createLinearGradient(0, -rOuter, 0, rOuter);
     doughGrad.addColorStop(0, '#f3c98a');
     doughGrad.addColorStop(0.5, '#d89b56');
     doughGrad.addColorStop(1, '#a8703a');
@@ -419,7 +450,7 @@ function draw() {
 
     // Glasur (etwas kleiner als Teig, oben drauf)
     ctx.beginPath();
-    ctx.ellipse(0, -1, rOuter * 0.94, rOuter * 0.58, 0, 0, Math.PI * 2);
+    ctx.arc(0, -0.5, rOuter * 0.92, 0, Math.PI * 2);
     const glazeGrad = ctx.createRadialGradient(-rOuter * 0.3, -rOuter * 0.4, 1, 0, 0, rOuter);
     glazeGrad.addColorStop(0, shadeColor(b.glaze, 60));
     glazeGrad.addColorStop(0.6, b.glaze);
@@ -429,27 +460,27 @@ function draw() {
 
     // Glanzlicht
     ctx.beginPath();
-    ctx.ellipse(-rOuter * 0.35, -rOuter * 0.45, rOuter * 0.35, rOuter * 0.15, -0.4, 0, Math.PI * 2);
+    ctx.ellipse(-rOuter * 0.35, -rOuter * 0.45, rOuter * 0.32, rOuter * 0.14, -0.4, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fill();
 
     // Loch in der Mitte (zeigt Hintergrund durch dunklen Kreis)
     ctx.beginPath();
-    ctx.ellipse(0, 0, rInner, rInner * 0.62, 0, 0, Math.PI * 2);
+    ctx.arc(0, 0, rInner, 0, Math.PI * 2);
     ctx.fillStyle = '#0c1018';
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(0, 1, rInner * 0.85, rInner * 0.5, 0, 0, Math.PI * 2);
+    ctx.arc(0, 0.8, rInner * 0.85, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.fill();
 
     // Streusel
     for (const s of b.sprinkles) {
       const sx = Math.cos(s.angle) * s.dist;
-      const sy = Math.sin(s.angle) * s.dist * 0.6;
-      if (Math.hypot(sx / rOuter, sy / (rOuter * 0.6)) > 0.92) continue;
+      const sy = Math.sin(s.angle) * s.dist;
+      if (Math.hypot(sx, sy) > rOuter * 0.92 || Math.hypot(sx, sy) < rInner * 1.15) continue;
       ctx.save();
-      ctx.translate(sx, sy - 1);
+      ctx.translate(sx, sy);
       ctx.rotate(s.rot);
       ctx.fillStyle = s.color;
       ctx.fillRect(-2.5, -0.8, 5, 1.6);
