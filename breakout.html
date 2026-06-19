@@ -81,6 +81,7 @@
 <div id="wrap">
   <div id="hud">
     <span>Score: <span id="score">0</span></span>
+    <span>Highscore: <span id="highscore">0</span></span>
     <span>Leben: <span id="lives">3</span></span>
     <span>Level: <span id="level">1</span></span>
     <span id="muteBtn" style="cursor:pointer;">🔊</span>
@@ -101,6 +102,7 @@ const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 const scoreEl = document.getElementById('score');
+const highscoreEl = document.getElementById('highscore');
 const livesEl = document.getElementById('lives');
 const levelEl = document.getElementById('level');
 const overlay = document.getElementById('overlay');
@@ -116,6 +118,7 @@ const GLAZE_COLORS = ['#ff6fa5', '#ff9f43', '#ffd76f', '#7ee787', '#6fb1ff'];
 const SPRINKLE_COLORS = ['#ffffff', '#ff5e7a', '#5ec8ff', '#ffe34d', '#7ee787'];
 
 let score = 0, lives = 3, level = 1;
+let highscore = parseInt(localStorage.getItem('breakoutHighscore') || '0', 10);
 let running = false, gameOver = false;
 let bricks = [];
 
@@ -241,6 +244,7 @@ function resetGame() {
 
 function updateHud() {
   scoreEl.textContent = score;
+  highscoreEl.textContent = highscore;
   livesEl.textContent = lives;
   levelEl.textContent = level;
 }
@@ -383,7 +387,13 @@ function update() {
       gameOver = true;
       running = false;
       sound.gameOver();
-      showOverlay('Game Over', `Score: ${score}`, 'Neu starten');
+      const isNewRecord = score > highscore;
+      if (isNewRecord) {
+        highscore = score;
+        localStorage.setItem('breakoutHighscore', highscore);
+        updateHud();
+      }
+      showOverlay('Game Over', isNewRecord ? `Neuer Highscore: ${score}! 🎉` : `Score: ${score} · Highscore: ${highscore}`, 'Neu starten');
     } else {
       sound.life();
       resetBall(1 + (level - 1) * 0.15);
