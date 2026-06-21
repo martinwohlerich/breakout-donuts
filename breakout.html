@@ -365,17 +365,20 @@ canvas.addEventListener('click', toggleRun);
 overlayBtn.addEventListener('click', toggleRun);
 
 // Touch-Steuerung (Mobil): relatives Wischen statt absoluter Fingerposition,
-// damit der Finger das Paddle nicht verdeckt - er kann irgendwo auf dem
-// Bildschirm sein, nur die Wisch-Distanz zaehlt.
+// damit der Finger das Paddle nicht verdeckt. Auf der gesamten Seite aktiv
+// (auch unterhalb des Spielfelds), nicht nur auf dem Canvas.
 let lastTouchX = null;
 
 canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  lastTouchX = e.touches[0].clientX;
   if (!running) toggleRun();
-}, { passive: false });
+}, { passive: true });
 
-canvas.addEventListener('touchmove', e => {
+document.addEventListener('touchstart', e => {
+  lastTouchX = e.touches[0].clientX;
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (e.target === document.getElementById('muteBtn')) return;
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
   const touchX = e.touches[0].clientX;
@@ -386,7 +389,7 @@ canvas.addEventListener('touchmove', e => {
   lastTouchX = touchX;
 }, { passive: false });
 
-canvas.addEventListener('touchend', () => { lastTouchX = null; });
+document.addEventListener('touchend', () => { lastTouchX = null; });
 
 overlayBtn.addEventListener('touchstart', e => {
   e.preventDefault();
