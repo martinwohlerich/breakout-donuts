@@ -3,26 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Breakout</title>
+<title>Donut Breakout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   html, body {
     margin: 0;
     height: 100%;
-    background: radial-gradient(circle at 50% 0%, #1a2238 0%, #0a0e1a 60%, #050709 100%);
+    background: radial-gradient(circle at 50% 0%, #2b1c2c 0%, #150d18 55%, #0a060c 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    color: #e6edf3;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+    color: #f3ede6;
     touch-action: none;
     overscroll-behavior: none;
   }
   #wrap { text-align: center; width: 100%; max-width: 480px; padding: 0 10px; }
   canvas {
-    background: #0c1018;
-    border: 3px solid #2a3349;
-    border-radius: 10px;
-    box-shadow: 0 0 50px rgba(80,160,255,0.18), inset 0 0 60px rgba(0,0,0,0.5);
+    background: #120c16;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px rgba(255,170,110,0.18), 0 10px 40px rgba(0,0,0,0.55), 0 0 70px rgba(255,140,70,0.12), inset 0 0 80px rgba(0,0,0,0.45);
     display: block;
     width: 100%;
     height: auto;
@@ -32,68 +34,117 @@
   #hud {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
     max-width: 480px;
     margin: 0 auto 10px;
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    text-shadow: 0 0 10px rgba(80,160,255,0.5);
+    padding: 8px 14px;
+    box-sizing: border-box;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    background: linear-gradient(180deg, rgba(66,42,58,0.6), rgba(32,20,32,0.6));
+    border: 1px solid rgba(255,170,110,0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+    backdrop-filter: blur(6px);
   }
+  #hud .stat { display: flex; align-items: center; gap: 5px; }
+  #hud .icon { font-size: 15px; filter: drop-shadow(0 0 4px rgba(255,150,70,0.6)); }
+  #hud .val { color: #ffdcae; }
+  #lives { color: #ff7f96; letter-spacing: 1px; text-shadow: 0 0 8px rgba(255,110,140,0.6); }
+  #muteBtn { cursor: pointer; }
   #hint {
     margin-top: 10px;
-    font-size: 13px;
-    color: #8b949e;
+    font-size: 12px;
+    color: #9d8ba0;
+    letter-spacing: 0.2px;
   }
   #overlay {
     position: fixed;
     inset: 0;
-    background: rgba(3,5,10,0.78);
-    backdrop-filter: blur(3px);
+    background: radial-gradient(circle at 50% 40%, rgba(60,30,25,0.4), rgba(8,5,10,0.92));
+    backdrop-filter: blur(4px);
     display: none;
     align-items: center;
     justify-content: center;
     flex-direction: column;
+    text-align: center;
+    padding: 20px;
   }
+  #overlay .panel {
+    position: relative;
+    max-width: 420px;
+    padding: 34px 36px;
+    background: linear-gradient(165deg, rgba(74,46,58,0.55), rgba(28,18,30,0.75));
+    border: 1px solid rgba(255,170,110,0.25);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 50px rgba(255,130,60,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  #overlay .panel::before {
+    content: '';
+    position: absolute;
+    top: -60%; left: 50%;
+    width: 220px; height: 220px;
+    margin-left: -110px;
+    background: radial-gradient(circle, rgba(255,170,100,0.35), rgba(255,170,100,0) 70%);
+    animation: panelGlow 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes panelGlow {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+  #overlay h1, #overlay p, #overlay button { position: relative; }
   #overlay h1 {
-    font-size: 46px;
-    margin-bottom: 10px;
-    text-shadow: 0 0 25px rgba(80,160,255,0.7);
-    letter-spacing: 2px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #ffd3a1;
+    text-shadow: 0 0 28px rgba(255,140,60,0.6);
+    letter-spacing: 1px;
   }
+  #overlay p { margin: 0; line-height: 1.6; color: #d9cbd4; font-size: 15px; }
   #overlay button {
-    margin-top: 20px;
-    padding: 12px 28px;
+    margin-top: 24px;
+    padding: 13px 32px;
+    font-family: 'Quicksand', sans-serif;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 700;
+    letter-spacing: 0.3px;
     border: none;
-    border-radius: 8px;
-    background: linear-gradient(180deg, #4c95ff, #2f6fe0);
-    color: white;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #ffa25e, #f0742a);
+    color: #2b1200;
     cursor: pointer;
-    box-shadow: 0 4px 18px rgba(47,111,224,0.5);
-    transition: transform 0.1s ease;
+    box-shadow: 0 6px 20px rgba(240,116,42,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
-  #overlay button:hover { background: linear-gradient(180deg, #5fa3ff, #3f80f0); transform: translateY(-1px); }
+  #overlay button:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(240,116,42,0.55), inset 0 1px 0 rgba(255,255,255,0.3); }
 </style>
 </head>
 <body>
 <div id="wrap">
   <div id="hud">
-    <span>Score: <span id="score">0</span></span>
-    <span>Highscore: <span id="highscore">0</span></span>
-    <span>Leben: <span id="lives">3</span></span>
-    <span>Level: <span id="level">1</span></span>
-    <span id="muteBtn" style="cursor:pointer;">🔊</span>
+    <span class="stat"><span class="icon">🍩</span><span class="val" id="score">0</span></span>
+    <span class="stat"><span class="icon">🏆</span><span class="val" id="highscore">0</span></span>
+    <span class="stat" id="lives">♥♥♥</span>
+    <span class="stat">Lv&nbsp;<span class="val" id="level">1</span></span>
+    <span class="stat" id="muteBtn">🔊</span>
   </div>
   <canvas id="game" width="480" height="560"></canvas>
-  <div id="hint">Maus/Finger bewegen oder ← → zum Steuern · Leertaste/Klick/Tippen: Start/Pause</div>
+  <div id="hint">Wischen/Maus/← → steuert · Tippen/Leertaste: Ball abschießen &amp; Pause</div>
 </div>
 
 <div id="overlay">
-  <h1 id="overlayTitle">Breakout</h1>
-  <p id="overlayText">Leertaste oder Klick zum Starten</p>
-  <button id="overlayBtn">Start</button>
+  <div class="panel">
+    <h1 id="overlayTitle">Donut Breakout</h1>
+    <p id="overlayText">Leertaste oder Klick zum Starten</p>
+    <button id="overlayBtn">Start</button>
+  </div>
 </div>
 
 <script>
@@ -127,9 +178,11 @@ let balls = [];
 let particles = [];
 let popups = [];
 let powerups = [];
+let dying = [];
 let shake = 0;
 let combo = 0, comboTimer = 0;
 let slowTimer = 0, paddleEffectTimer = 0;
+let totalBricks = 1, destroyedBricks = 0;
 
 const POWERUP_TYPES = [
   { type: 'wide', color: '#54a0ff', label: 'W' },
@@ -139,12 +192,23 @@ const POWERUP_TYPES = [
   { type: 'life', color: '#ff6fa5', label: '+' }
 ];
 
-// Sterne-Hintergrund (statisch generiert)
+// Sterne-Hintergrund (funkeln per Sinus-Phase)
 const stars = Array.from({ length: 60 }, () => ({
   x: Math.random() * W,
   y: Math.random() * H,
   r: Math.random() * 1.2 + 0.2,
-  a: Math.random() * 0.5 + 0.2
+  a: Math.random() * 0.5 + 0.2,
+  phase: Math.random() * Math.PI * 2,
+  speed: 0.5 + Math.random() * 1.5
+}));
+
+// Warme Bokeh-Lichter (driften langsam durchs Bild)
+const bokeh = Array.from({ length: 7 }, () => ({
+  x: Math.random() * W,
+  y: Math.random() * H,
+  r: 30 + Math.random() * 55,
+  drift: 4 + Math.random() * 8,
+  a: 0.03 + Math.random() * 0.04
 }));
 
 function spawnParticles(x, y, color, count = 10) {
@@ -163,13 +227,13 @@ function spawnParticles(x, y, color, count = 10) {
   }
 }
 
-function updateParticles() {
+function updateParticles(ts) {
   for (const p of particles) {
-    p.x += p.dx;
-    p.y += p.dy;
-    p.dy += 0.08;
-    p.life -= 0.035;
-    p.rot += p.spin;
+    p.x += p.dx * ts;
+    p.y += p.dy * ts;
+    p.dy += 0.08 * ts;
+    p.life -= 0.035 * ts;
+    p.rot += p.spin * ts;
   }
   particles = particles.filter(p => p.life > 0);
 }
@@ -178,12 +242,34 @@ function spawnPopup(x, y, text, color) {
   popups.push({ x, y, text, color, life: 1 });
 }
 
-function updatePopups() {
+function updatePopups(ts) {
   for (const p of popups) {
-    p.y -= 0.6;
-    p.life -= 0.018;
+    p.y -= 0.6 * ts;
+    p.life -= 0.018 * ts;
   }
   popups = popups.filter(p => p.life > 0);
+}
+
+// Zerstoerte Donuts trudeln davon statt schlagartig zu verschwinden
+function spawnDyingDonut(b) {
+  dying.push({
+    x: b.x + b.w / 2, y: b.y + b.h / 2,
+    rOuter: Math.min(b.w, b.h) / 2 - 1,
+    glaze: b.glaze, sprinkles: b.sprinkles,
+    bitten: b.bitten, biteAngle: b.biteAngle,
+    rot: 0, vrot: (Math.random() - 0.5) * 0.3,
+    vy: -1.5 - Math.random(), life: 1
+  });
+}
+
+function updateDying(ts) {
+  for (const d of dying) {
+    d.rot += d.vrot * ts;
+    d.y += d.vy * ts;
+    d.vy += 0.15 * ts;
+    d.life -= 0.05 * ts;
+  }
+  dying = dying.filter(d => d.life > 0);
 }
 
 function spawnPowerup(x, y) {
@@ -274,18 +360,35 @@ const sound = {
 };
 
 function resetBall(speedMult = 1) {
+  // Ball klebt am Paddle und wird per Tipp/Leertaste abgeschossen
   balls = [{
-    x: W / 2,
+    x: paddle.x + paddle.w / 2,
     y: PADDLE_Y - BALL_R - 1,
-    dx: 3 * speedMult * (Math.random() > 0.5 ? 1 : -1),
-    dy: -3.5 * speedMult,
+    dx: 0,
+    dy: 0,
+    speedMult,
+    stuck: true,
     r: BALL_R,
     trail: []
   }];
 }
 
+function launchStuckBalls() {
+  let launched = false;
+  for (const ball of balls) {
+    if (!ball.stuck) continue;
+    ball.stuck = false;
+    ball.dx = (Math.random() * 2 - 1) * 2 * ball.speedMult;
+    ball.dy = -3.5 * ball.speedMult;
+    launched = true;
+  }
+  if (launched) sound.paddle();
+  return launched;
+}
+
 function buildBricks() {
   bricks = [];
+  const now = performance.now();
   for (let r = 0; r < BRICK_ROWS; r++) {
     for (let c = 0; c < BRICK_COLS; c++) {
       const glaze = GLAZE_COLORS[r % GLAZE_COLORS.length];
@@ -302,17 +405,24 @@ function buildBricks() {
         alive: true,
         glaze,
         sprinkles,
+        // Obere zwei Reihen sind zaehe Donuts: erster Treffer beisst nur an
+        hp: r < 2 ? 2 : 1,
+        bitten: false,
+        biteAngle: Math.random() * Math.PI * 2,
+        born: now + (r * BRICK_COLS + c) * 28,
         points: (BRICK_ROWS - r) * 10
       });
     }
   }
+  totalBricks = bricks.length;
+  destroyedBricks = 0;
 }
 
 function resetGame() {
   score = 0; lives = 3; level = 1;
   combo = 0; comboTimer = 0;
   slowTimer = 0; paddleEffectTimer = 0;
-  powerups = []; popups = [];
+  powerups = []; popups = []; dying = [];
   paddle.w = PADDLE_W;
   paddle.x = W / 2 - paddle.w / 2;
   buildBricks();
@@ -323,7 +433,7 @@ function resetGame() {
 function updateHud() {
   scoreEl.textContent = score;
   highscoreEl.textContent = highscore;
-  livesEl.textContent = lives;
+  livesEl.textContent = '♥'.repeat(Math.min(Math.max(lives, 0), 8));
   levelEl.textContent = level;
 }
 
@@ -371,6 +481,7 @@ let lastTouchX = null;
 
 canvas.addEventListener('touchstart', e => {
   if (!running) toggleRun();
+  else launchStuckBalls();
 }, { passive: true });
 
 document.addEventListener('touchstart', e => {
@@ -404,37 +515,51 @@ function toggleRun() {
     hideOverlay();
     return;
   }
+  // Laeuft das Spiel und ein Ball klebt am Paddle: Tipp schiesst ab statt zu pausieren
+  if (running && launchStuckBalls()) return;
   running = !running;
   if (running) hideOverlay();
   else showOverlay('Pause', 'Leertaste oder Klick zum Weiterspielen', 'Weiter');
 }
 
-function movePaddle() {
-  if (keys['ArrowLeft']) paddle.x -= 7;
-  if (keys['ArrowRight']) paddle.x += 7;
+function movePaddle(ts) {
+  if (keys['ArrowLeft']) paddle.x -= 7 * ts;
+  if (keys['ArrowRight']) paddle.x += 7 * ts;
   paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
 }
 
-function update() {
-  movePaddle();
-  updateParticles();
-  updatePopups();
-  if (shake > 0) shake *= 0.85;
+function update(ts) {
+  movePaddle(ts);
+  updateParticles(ts);
+  updatePopups(ts);
+  updateDying(ts);
+  if (shake > 0) shake *= Math.pow(0.85, ts);
 
-  if (slowTimer > 0) slowTimer--;
+  if (slowTimer > 0) slowTimer -= ts;
   if (paddleEffectTimer > 0) {
-    paddleEffectTimer--;
-    if (paddleEffectTimer === 0) {
+    paddleEffectTimer -= ts;
+    if (paddleEffectTimer <= 0) {
       paddle.w = PADDLE_W;
       paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
     }
   }
-  const speedFactor = slowTimer > 0 ? 0.6 : 1;
+  // Klassische Rampe: je weniger Donuts uebrig, desto schneller der Ball
+  const speedRamp = 1 + (destroyedBricks / totalBricks) * 0.35;
+  const speedFactor = (slowTimer > 0 ? 0.6 : 1) * speedRamp;
 
   for (let bi = balls.length - 1; bi >= 0; bi--) {
     const ball = balls[bi];
-    ball.x += ball.dx * speedFactor;
-    ball.y += ball.dy * speedFactor;
+
+    // Festklebender Ball reitet auf dem Paddle, bis er abgeschossen wird
+    if (ball.stuck) {
+      ball.x = paddle.x + paddle.w / 2;
+      ball.y = PADDLE_Y - ball.r - 1;
+      ball.trail.length = 0;
+      continue;
+    }
+
+    ball.x += ball.dx * speedFactor * ts;
+    ball.y += ball.dy * speedFactor * ts;
 
     ball.trail.push({ x: ball.x, y: ball.y });
     if (ball.trail.length > 10) ball.trail.shift();
@@ -458,19 +583,31 @@ function update() {
       if (!b.alive) continue;
       if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
           ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
-        b.alive = false;
 
         combo++;
         comboTimer = 90;
         const multiplier = 1 + Math.min(Math.floor((combo - 1) / 2) * 0.5, 2);
-        const gained = Math.round(b.points * multiplier);
-        score += gained;
 
-        spawnParticles(ball.x, ball.y, b.glaze, 12);
-        spawnPopup(b.x + b.w / 2, b.y + b.h / 2, multiplier > 1 ? `+${gained} x${multiplier}` : `+${gained}`, multiplier > 1 ? '#ffd76f' : '#ffffff');
-        sound.brick(b.points / 10);
-
-        if (Math.random() < 0.18) spawnPowerup(b.x + b.w / 2, b.y + b.h / 2);
+        b.hp--;
+        if (b.hp > 0) {
+          // Zaeher Donut: erster Treffer beisst nur an
+          b.bitten = true;
+          const gained = Math.round(10 * multiplier);
+          score += gained;
+          spawnParticles(ball.x, ball.y, b.glaze, 6);
+          spawnPopup(b.x + b.w / 2, b.y + b.h / 2, `+${gained}`, '#f3c98a');
+          sound.wall();
+        } else {
+          b.alive = false;
+          destroyedBricks++;
+          spawnDyingDonut(b);
+          const gained = Math.round(b.points * multiplier);
+          score += gained;
+          spawnParticles(ball.x, ball.y, b.glaze, 12);
+          spawnPopup(b.x + b.w / 2, b.y + b.h / 2, multiplier > 1 ? `+${gained} x${multiplier}` : `+${gained}`, multiplier > 1 ? '#ffd76f' : '#ffffff');
+          sound.brick(b.points / 10);
+          if (Math.random() < 0.18) spawnPowerup(b.x + b.w / 2, b.y + b.h / 2);
+        }
 
         const overlapLeft = (ball.x + ball.r) - b.x;
         const overlapRight = (b.x + b.w) - (ball.x - ball.r);
@@ -485,20 +622,24 @@ function update() {
       }
     }
 
+    // Anti-Stuck: nie fast-horizontal (endloses Hin und Her) oder exakt vertikal
+    if (Math.abs(ball.dy) < 1.2) ball.dy = (ball.dy < 0 ? -1.2 : 1.2);
+    if (Math.abs(ball.dx) < 0.25) ball.dx += (Math.random() < 0.5 ? -0.4 : 0.4);
+
     if (ball.y - ball.r > H) {
       balls.splice(bi, 1);
     }
   }
 
   if (comboTimer > 0) {
-    comboTimer--;
-    if (comboTimer === 0) combo = 0;
+    comboTimer -= ts;
+    if (comboTimer <= 0) { comboTimer = 0; combo = 0; }
   }
 
   // Power-ups einsammeln
   for (let pi = powerups.length - 1; pi >= 0; pi--) {
     const p = powerups[pi];
-    p.y += p.dy;
+    p.y += p.dy * ts;
     if (p.y + p.r >= PADDLE_Y && p.y - p.r <= PADDLE_Y + PADDLE_H &&
         p.x >= paddle.x - p.r && p.x <= paddle.x + paddle.w + p.r) {
       applyPowerup(p.type);
@@ -551,7 +692,94 @@ function shadeColor(hex, percent) {
   return `rgb(${r},${g},${b})`;
 }
 
+// Zeichnet einen Donut an (cx, cy); opts: scale, rot, alpha, bitten, biteAngle
+function drawDonut(cx, cy, rOuter, glaze, sprinkles, opts = {}) {
+  const { scale = 1, rot = 0, alpha = 1, bitten = false, biteAngle = 0 } = opts;
+  const rInner = rOuter * 0.4;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  ctx.scale(scale, scale);
+  ctx.globalAlpha = alpha;
+
+  // Schlagschatten auf der Unterlage
+  ctx.beginPath();
+  ctx.arc(1.5, 2.5, rOuter, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fill();
+
+  // Teig-Ring (3D-Gradient: hell oben, dunkel unten)
+  ctx.beginPath();
+  ctx.arc(0, 0, rOuter, 0, Math.PI * 2);
+  const doughGrad = ctx.createLinearGradient(0, -rOuter, 0, rOuter);
+  doughGrad.addColorStop(0, '#f3c98a');
+  doughGrad.addColorStop(0.5, '#d89b56');
+  doughGrad.addColorStop(1, '#a8703a');
+  ctx.fillStyle = doughGrad;
+  ctx.fill();
+
+  // Glasur (etwas kleiner als Teig, oben drauf)
+  ctx.beginPath();
+  ctx.arc(0, -0.5, rOuter * 0.92, 0, Math.PI * 2);
+  const glazeGrad = ctx.createRadialGradient(-rOuter * 0.3, -rOuter * 0.4, 1, 0, 0, rOuter);
+  glazeGrad.addColorStop(0, shadeColor(glaze, 60));
+  glazeGrad.addColorStop(0.6, glaze);
+  glazeGrad.addColorStop(1, shadeColor(glaze, -30));
+  ctx.fillStyle = glazeGrad;
+  ctx.fill();
+
+  // Glanzlicht
+  ctx.beginPath();
+  ctx.ellipse(-rOuter * 0.35, -rOuter * 0.45, rOuter * 0.32, rOuter * 0.14, -0.4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fill();
+
+  // Loch in der Mitte
+  ctx.beginPath();
+  ctx.arc(0, 0, rInner, 0, Math.PI * 2);
+  ctx.fillStyle = '#120c16';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, 0.8, rInner * 0.85, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.fill();
+
+  // Streusel
+  for (const s of sprinkles) {
+    const sx = Math.cos(s.angle) * s.dist;
+    const sy = Math.sin(s.angle) * s.dist;
+    if (Math.hypot(sx, sy) > rOuter * 0.92 || Math.hypot(sx, sy) < rInner * 1.15) continue;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(s.rot);
+    ctx.fillStyle = s.color;
+    ctx.fillRect(-2.5, -0.8, 5, 1.6);
+    ctx.restore();
+  }
+
+  // Angebissen: Bissmulde mit zwei Zahnabdruecken am Rand
+  if (bitten) {
+    const bx = Math.cos(biteAngle) * rOuter * 0.95;
+    const by = Math.sin(biteAngle) * rOuter * 0.95;
+    ctx.fillStyle = '#120c16';
+    ctx.beginPath();
+    ctx.arc(bx, by, rOuter * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    for (const off of [-0.45, 0.45]) {
+      const tx = Math.cos(biteAngle + off) * rOuter * 0.8;
+      const ty = Math.sin(biteAngle + off) * rOuter * 0.8;
+      ctx.beginPath();
+      ctx.arc(tx, ty, rOuter * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
 function draw() {
+  const now = performance.now();
   ctx.save();
   if (shake > 0.3) {
     ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
@@ -559,79 +787,42 @@ function draw() {
 
   ctx.clearRect(-20, -20, W + 40, H + 40);
 
-  // Sterne-Hintergrund
+  // Warme Bokeh-Lichter (langsam driftend)
+  for (const b of bokeh) {
+    const bx = ((b.x + now / 1000 * b.drift) % (W + b.r * 2)) - b.r;
+    const g = ctx.createRadialGradient(bx, b.y, 1, bx, b.y, b.r);
+    g.addColorStop(0, `rgba(255,170,100,${b.a})`);
+    g.addColorStop(1, 'rgba(255,170,100,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(bx - b.r, b.y - b.r, b.r * 2, b.r * 2);
+  }
+
+  // Sterne (funkelnd)
   for (const s of stars) {
+    const tw = 0.6 + 0.4 * Math.sin(now / 1000 * s.speed + s.phase);
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(160,200,255,${s.a})`;
+    ctx.fillStyle = `rgba(255,225,190,${s.a * tw})`;
     ctx.fill();
   }
 
-  // Bricks als 3D-Donuts (echte Kreise)
+  // Sterbende Donuts (trudeln davon)
+  for (const d of dying) {
+    drawDonut(d.x, d.y, d.rOuter, d.glaze, d.sprinkles, {
+      scale: Math.max(d.life, 0.01), rot: d.rot, alpha: Math.max(d.life, 0),
+      bitten: d.bitten, biteAngle: d.biteAngle
+    });
+  }
+
+  // Bricks als 3D-Donuts (mit Einflug-Animation beim Levelstart)
   for (const b of bricks) {
     if (!b.alive) continue;
-    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-    const rOuter = Math.min(b.w, b.h) / 2 - 1, rInner = rOuter * 0.4;
-
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    // Schlagschatten auf der Unterlage
-    ctx.beginPath();
-    ctx.arc(1.5, 2.5, rOuter, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fill();
-
-    // Teig-Ring (3D-Gradient: hell oben, dunkel unten)
-    ctx.beginPath();
-    ctx.arc(0, 0, rOuter, 0, Math.PI * 2);
-    const doughGrad = ctx.createLinearGradient(0, -rOuter, 0, rOuter);
-    doughGrad.addColorStop(0, '#f3c98a');
-    doughGrad.addColorStop(0.5, '#d89b56');
-    doughGrad.addColorStop(1, '#a8703a');
-    ctx.fillStyle = doughGrad;
-    ctx.fill();
-
-    // Glasur (etwas kleiner als Teig, oben drauf)
-    ctx.beginPath();
-    ctx.arc(0, -0.5, rOuter * 0.92, 0, Math.PI * 2);
-    const glazeGrad = ctx.createRadialGradient(-rOuter * 0.3, -rOuter * 0.4, 1, 0, 0, rOuter);
-    glazeGrad.addColorStop(0, shadeColor(b.glaze, 60));
-    glazeGrad.addColorStop(0.6, b.glaze);
-    glazeGrad.addColorStop(1, shadeColor(b.glaze, -30));
-    ctx.fillStyle = glazeGrad;
-    ctx.fill();
-
-    // Glanzlicht
-    ctx.beginPath();
-    ctx.ellipse(-rOuter * 0.35, -rOuter * 0.45, rOuter * 0.32, rOuter * 0.14, -0.4, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fill();
-
-    // Loch in der Mitte (zeigt Hintergrund durch dunklen Kreis)
-    ctx.beginPath();
-    ctx.arc(0, 0, rInner, 0, Math.PI * 2);
-    ctx.fillStyle = '#0c1018';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(0, 0.8, rInner * 0.85, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fill();
-
-    // Streusel
-    for (const s of b.sprinkles) {
-      const sx = Math.cos(s.angle) * s.dist;
-      const sy = Math.sin(s.angle) * s.dist;
-      if (Math.hypot(sx, sy) > rOuter * 0.92 || Math.hypot(sx, sy) < rInner * 1.15) continue;
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.rotate(s.rot);
-      ctx.fillStyle = s.color;
-      ctx.fillRect(-2.5, -0.8, 5, 1.6);
-      ctx.restore();
-    }
-
-    ctx.restore();
+    const prog = Math.min(Math.max((now - b.born) / 260, 0), 1);
+    if (prog <= 0) continue;
+    const ease = 1 - Math.pow(1 - prog, 3);
+    drawDonut(b.x + b.w / 2, b.y + b.h / 2, Math.min(b.w, b.h) / 2 - 1, b.glaze, b.sprinkles, {
+      scale: ease, alpha: ease, bitten: b.bitten, biteAngle: b.biteAngle
+    });
   }
 
   // Partikel (Streusel-Splitter)
@@ -695,7 +886,7 @@ function draw() {
   ctx.roundRect(paddle.x + paddle.w - handleW - 2, PADDLE_Y + (PADDLE_H - handleH) / 2, handleW + 2, handleH, handleH / 2);
   ctx.fill();
 
-  // Baelle mit Trail und Glow
+  // Baelle mit Trail und Glow (warmes Zucker-Licht)
   for (const ball of balls) {
     for (let i = 0; i < ball.trail.length; i++) {
       const t = ball.trail[i];
@@ -703,20 +894,34 @@ function draw() {
       const r = ball.r * (i / ball.trail.length);
       ctx.beginPath();
       ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(120,190,255,${alpha})`;
+      ctx.fillStyle = `rgba(255,205,150,${alpha})`;
       ctx.fill();
     }
 
     ctx.save();
-    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    ctx.shadowColor = 'rgba(255,225,180,0.9)';
     ctx.shadowBlur = 16;
     const ballGrad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, ball.r);
     ballGrad.addColorStop(0, '#ffffff');
-    ballGrad.addColorStop(1, '#9fd3ff');
+    ballGrad.addColorStop(1, '#ffd9a0');
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
     ctx.fillStyle = ballGrad;
     ctx.fill();
+    ctx.restore();
+  }
+
+  // Abschuss-Hinweis, solange ein Ball am Paddle klebt
+  if (running && balls.some(b => b.stuck)) {
+    const pulse = 0.5 + 0.5 * Math.sin(now / 300);
+    ctx.save();
+    ctx.globalAlpha = 0.45 + pulse * 0.45;
+    ctx.font = "bold 14px 'Quicksand', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd9a0';
+    ctx.shadowColor = 'rgba(255,180,100,0.8)';
+    ctx.shadowBlur = 10;
+    ctx.fillText('Tippen / Leertaste zum Abschuss', W / 2, PADDLE_Y - 34);
     ctx.restore();
   }
 
@@ -755,7 +960,7 @@ function draw() {
   if (combo > 1) {
     ctx.save();
     ctx.globalAlpha = Math.min(comboTimer / 30, 1);
-    ctx.font = 'bold 16px sans-serif';
+    ctx.font = "bold 16px 'Quicksand', sans-serif";
     ctx.textAlign = 'right';
     ctx.fillStyle = '#ffd76f';
     ctx.shadowColor = 'rgba(255,215,110,0.8)';
@@ -767,16 +972,23 @@ function draw() {
   ctx.restore();
 }
 
-function loop() {
+// Delta-Time-Loop: Spielgeschwindigkeit unabhaengig von der Bildwiederholrate
+// (sonst laeuft das Spiel auf 120Hz-Displays doppelt so schnell)
+let lastFrameTime = performance.now();
+function loop(now) {
+  now = now || performance.now();
+  let ts = (now - lastFrameTime) / (1000 / 60);
+  lastFrameTime = now;
+  ts = Math.min(Math.max(ts, 0.25), 3);
   if (running) {
-    update();
+    update(ts);
   }
   draw();
   requestAnimationFrame(loop);
 }
 
 resetGame();
-showOverlay('Breakout', 'Leertaste oder Klick zum Starten', 'Start');
+showOverlay('Donut Breakout', 'Zerschlage alle Donuts – oben sitzen die zähen, die zwei Treffer brauchen. Sammle Power-ups mit dem Nudelholz!', 'Start');
 loop();
 </script>
 </body>
