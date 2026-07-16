@@ -124,6 +124,15 @@
     transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
   #overlay button:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(240,116,42,0.55), inset 0 1px 0 rgba(255,255,255,0.3); }
+  #overlayBtn2 {
+    display: none;
+    margin-left: 12px;
+    background: transparent;
+    border: 1px solid rgba(255,170,110,0.45);
+    color: #ffd3a1;
+    box-shadow: none;
+  }
+  #overlayBtn2:hover { background: rgba(255,150,80,0.12); box-shadow: none; }
 </style>
 </head>
 <body>
@@ -144,6 +153,7 @@
     <h1 id="overlayTitle">Donut Breakout</h1>
     <p id="overlayText">Leertaste oder Klick zum Starten</p>
     <button id="overlayBtn">Start</button>
+    <button id="overlayBtn2">Neu starten</button>
   </div>
 </div>
 
@@ -160,6 +170,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlayTitle');
 const overlayText = document.getElementById('overlayText');
 const overlayBtn = document.getElementById('overlayBtn');
+const overlayBtn2 = document.getElementById('overlayBtn2');
 
 const PADDLE_W = 90, PADDLE_H = 14, PADDLE_Y = H - 30;
 const BALL_R = 7;
@@ -430,6 +441,53 @@ function resetGame() {
   updateHud();
 }
 
+// --- Spielstand speichern/laden (localStorage) ---
+function saveProgress() {
+  if (gameOver) return;
+  if (score === 0 && level === 1 && destroyedBricks === 0) return; // nichts Nennenswertes
+  const data = {
+    score, lives, level,
+    bricks: bricks.map(b => ({ a: b.alive, h: b.hp, bi: b.bitten })),
+  };
+  localStorage.setItem('breakoutSave', JSON.stringify(data));
+}
+
+function clearProgress() {
+  localStorage.removeItem('breakoutSave');
+}
+
+function loadProgress() {
+  try {
+    const d = JSON.parse(localStorage.getItem('breakoutSave'));
+    if (!d || typeof d.level !== 'number' || d.level < 1) return null;
+    return d;
+  } catch (e) {
+    return null;
+  }
+}
+
+function restoreProgress(d) {
+  score = d.score || 0;
+  lives = Math.max(d.lives || 3, 1);
+  level = d.level;
+  combo = 0; comboTimer = 0;
+  slowTimer = 0; paddleEffectTimer = 0;
+  powerups = []; popups = []; dying = [];
+  paddle.w = PADDLE_W;
+  paddle.x = W / 2 - paddle.w / 2;
+  buildBricks();
+  if (Array.isArray(d.bricks) && d.bricks.length === bricks.length) {
+    d.bricks.forEach((s, i) => {
+      bricks[i].alive = !!s.a;
+      bricks[i].hp = s.h || 1;
+      bricks[i].bitten = !!s.bi;
+    });
+  }
+  destroyedBricks = bricks.filter(b => !b.alive).length;
+  resetBall(1 + (level - 1) * 0.15);
+  updateHud();
+}
+
 function updateHud() {
   scoreEl.textContent = score;
   highscoreEl.textContent = highscore;
@@ -446,6 +504,7 @@ function showOverlay(title, text, btnLabel) {
 
 function hideOverlay() {
   overlay.style.display = 'none';
+  overlayBtn2.style.display = 'none';
 }
 
 document.getElementById('muteBtn').addEventListener('click', e => {
@@ -519,7 +578,10 @@ function toggleRun() {
   if (running && launchStuckBalls()) return;
   running = !running;
   if (running) hideOverlay();
-  else showOverlay('Pause', 'Leertaste oder Klick zum Weiterspielen', 'Weiter');
+  else {
+    saveProgress();
+    showOverlay('Pause', 'Spielstand gespeichert – du kannst auch später weitermachen.', 'Weiter');
+  }
 }
 
 function movePaddle(ts) {
@@ -657,6 +719,7 @@ function update(ts) {
     if (lives <= 0) {
       gameOver = true;
       running = false;
+      clearProgress();
       sound.gameOver();
       const isNewRecord = score > highscore;
       if (isNewRecord) {
@@ -682,6 +745,7 @@ function update(ts) {
     paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
     updateHud();
     sound.levelUp();
+    saveProgress(); // Checkpoint am Levelanfang
   }
 }
 
@@ -987,8 +1051,31 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+// "Neu starten" verwirft den Spielstand und beginnt von vorn
+function startFresh(e) {
+  if (e) e.preventDefault();
+  clearProgress();
+  resetGame();
+  gameOver = false;
+  running = true;
+  hideOverlay();
+}
+overlayBtn2.addEventListener('click', startFresh);
+overlayBtn2.addEventListener('touchstart', startFresh, { passive: false });
+
+// Auch beim Schliessen/Wechseln des Tabs sichern (mobil feuert beforeunload nicht zuverlaessig)
+window.addEventListener('beforeunload', () => { if (running || !gameOver) saveProgress(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveProgress(); });
+
 resetGame();
-showOverlay('Donut Breakout', 'Zerschlage alle Donuts – oben sitzen die zähen, die zwei Treffer brauchen. Sammle Power-ups mit dem Nudelholz!', 'Start');
+const saved = loadProgress();
+if (saved) {
+  restoreProgress(saved);
+  showOverlay('Donut Breakout', `Gespeicherter Spielstand: Level ${level} · Score ${score}`, 'Weiterspielen');
+  overlayBtn2.style.display = 'inline-block';
+} else {
+  showOverlay('Donut Breakout', 'Zerschlage alle Donuts – oben sitzen die zähen, die zwei Treffer brauchen. Sammle Power-ups mit dem Nudelholz!', 'Start');
+}
 loop();
 </script>
 </body>
